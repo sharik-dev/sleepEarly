@@ -1,19 +1,15 @@
+// sleepEarly/ContentView.swift
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "swift")
-                .imageScale(.large)
-                .foregroundStyle(.orange)
-            Text("sleepEarly")
-                .font(.largeTitle)
-                .bold()
+        TabView {
+            HomeView()
+                .tabItem { Label("Accueil", systemImage: "moon.fill") }
+            HistoryView()
+                .tabItem { Label("Historique", systemImage: "calendar") }
+            SettingsView()
+                .tabItem { Label("Réglages", systemImage: "gearshape") }
         }
-        .padding()
     }
-}
-
-#Preview {
-    ContentView()
 }
