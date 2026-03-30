@@ -84,6 +84,18 @@ struct HomeView: View {
             }
             .padding()
         }
-        .onReceive(timer) { now = $0 }
+        .onReceive(timer) { date in
+            now = date
+            #if os(iOS)
+            let remaining = Int(settings.targetBedtimeToday.timeIntervalSince(date) / 60)
+            if remaining == 30 {
+                LiveActivityManager.start(targetBedtime: settings.targetBedtimeToday)
+            } else if remaining >= 0 {
+                LiveActivityManager.update(minutesRemaining: remaining)
+            } else {
+                LiveActivityManager.stop()
+            }
+            #endif
+        }
     }
 }

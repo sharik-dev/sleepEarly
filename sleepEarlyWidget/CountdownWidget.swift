@@ -67,7 +67,6 @@ struct CountdownWidgetEntryView: View {
     }
 }
 
-@main
 struct CountdownWidget: Widget {
     let kind = "CountdownWidget"
 
