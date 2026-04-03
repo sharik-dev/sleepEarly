@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.sleepearly</string>
+		<string>group.sleepappbusharik</string>
 	</array>
 </dict>
 </plist>

@@ -6,12 +6,26 @@
 	<string>development</string>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array>
+		<string>health-records</string>
+	</array>
+	<key>com.apple.developer.healthkit.background-delivery</key>
+	<true/>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array/>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+		<string>CloudKit</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array/>
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.</string>
-		<string>group.sleepearly </string>
+		<string>group.sleepappbusharik</string>
 	</array>
 </dict>
 </plist>

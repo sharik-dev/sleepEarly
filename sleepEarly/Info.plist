@@ -5,10 +5,12 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>bluetooth-peripheral</string>
+		<string>audio</string>
+		<string>processing</string>
+		<string>push-to-talk</string>
+		<string>location</string>
+		<string>external-accessory</string>
 	</array>
-	<key>NSHealthShareUsageDescription</key>
-	<string>sleepEarly lit vos données de sommeil pour calculer votre streak.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>sleepEarly enregistre votre heure de coucher.</string>
 </dict>
 </plist>
