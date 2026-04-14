@@ -4,6 +4,7 @@ import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
+    @EnvironmentObject var screenTime: ScreenTimeManager
     @State private var selectedHour: Int = 22
     @State private var selectedMinute: Int = 0
 
@@ -48,8 +49,8 @@ struct SettingsView: View {
 
                             HStack(spacing: 0) {
                                 Picker("Heure", selection: $selectedHour) {
-                                    ForEach([18, 19, 20, 21, 22, 23, 0], id: \.self) { h in
-                                        Text(h == 0 ? "0h" : "\(h)h")
+                                    ForEach(18...23, id: \.self) { h in
+                                        Text("\(h)h")
                                             .foregroundStyle(Theme.textPrimary)
                                             .tag(h)
                                     }
@@ -172,10 +173,15 @@ struct SettingsView: View {
     }
 
     private func reschedule() {
-        guard settings.notificationsEnabled else { return }
-        NotificationScheduler.scheduleAll(
-            targetHour: settings.targetHour,
-            targetMinute: settings.targetMinute
+        if settings.notificationsEnabled {
+            NotificationScheduler.scheduleAll(
+                targetHour: settings.targetHour,
+                targetMinute: settings.targetMinute
+            )
+        }
+        screenTime.rescheduleIfNeeded(
+            bedtimeHour: settings.targetHour,
+            bedtimeMinute: settings.targetMinute
         )
     }
 }

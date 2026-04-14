@@ -1,14 +1,17 @@
 // sleepEarly/Views/HomeView.swift
 import SwiftUI
 import UserNotifications
+import FamilyControls
 
 struct HomeView: View {
     @EnvironmentObject var settings: AppSettings
     @EnvironmentObject var store: SleepStore
+    @EnvironmentObject var screenTime: ScreenTimeManager
     @State private var now = Date()
     @State private var showStarfield = false
     @State private var notifPermission: UNAuthorizationStatus = .notDetermined
     @State private var showFriction = false
+    @State private var showAppPicker = false
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -82,7 +85,7 @@ struct HomeView: View {
             } else {
                 LiveActivityManager.stop()
             }
-            if remaining == 0 && settings.frictionEnabled {
+            if remaining <= 0 && settings.frictionEnabled {
                 showFriction = true
             }
             #endif
@@ -288,60 +291,119 @@ struct HomeView: View {
                     Circle()
                         .fill(Theme.accentSecondary.opacity(0.13))
                         .frame(width: 42, height: 42)
-                    Image(systemName: settings.frictionEnabled ? "shield.fill" : "shield")
+                    Image(systemName: screenTime.isEnabled ? "shield.fill" : "shield")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(settings.frictionEnabled ? Theme.accentSecondary : Theme.textTertiary)
+                        .foregroundStyle(screenTime.isEnabled ? Theme.accentSecondary : Theme.textTertiary)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Bloquer les apps")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text(settings.frictionEnabled
+                    Text(screenTime.isEnabled
                          ? "Actif à \(settings.targetHour)h\(String(format: "%02d", settings.targetMinute))"
                          : "Inactif")
                         .font(.system(size: 12))
-                        .foregroundStyle(settings.frictionEnabled ? Theme.accentSecondary : Theme.textTertiary)
+                        .foregroundStyle(screenTime.isEnabled ? Theme.accentSecondary : Theme.textTertiary)
                 }
 
                 Spacer()
 
-                Toggle("", isOn: $settings.frictionEnabled)
+                if screenTime.isAuthorized {
+                    Toggle("", isOn: Binding(
+                        get: { screenTime.isEnabled },
+                        set: { enabled in
+                            if enabled {
+                                screenTime.enable(
+                                    bedtimeHour: settings.targetHour,
+                                    bedtimeMinute: settings.targetMinute
+                                )
+                            } else {
+                                screenTime.disable()
+                            }
+                        }
+                    ))
                     .labelsHidden()
                     .tint(Theme.accentSecondary)
-            }
-
-            // Big action button — Opal-style
-            Button {
-                showFriction = true
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 16, weight: .semibold))
-                    Text(settings.frictionEnabled ? "Simuler le blocage" : "Activer et bloquer")
-                        .font(.system(size: 16, weight: .bold))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: Theme.cornerRadiusButton)
-                        .fill(settings.frictionEnabled
-                              ? LinearGradient(colors: [Theme.accentSecondary, Theme.accentPrimary], startPoint: .leading, endPoint: .trailing)
-                              : LinearGradient(colors: [Theme.textTertiary.opacity(0.3), Theme.textTertiary.opacity(0.2)], startPoint: .leading, endPoint: .trailing))
-                        .shadow(color: settings.frictionEnabled ? Theme.accentSecondary.opacity(0.4) : .clear, radius: 12, x: 0, y: 4)
-                )
-                .foregroundStyle(.white)
             }
-            .buttonStyle(.plain)
-            .animation(.easeInOut(duration: 0.2), value: settings.frictionEnabled)
 
-            Text("Bloque l'accès aux apps distractives à l'heure du coucher avec un écran de friction.")
+            // Authorization banner
+            if !screenTime.isAuthorized {
+                Button {
+                    Task { await screenTime.requestAuthorization() }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Autoriser le contrôle parental")
+                            .font(.system(size: 15, weight: .bold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusButton)
+                            .fill(LinearGradient(
+                                colors: [Theme.accentSecondary, Theme.accentPrimary],
+                                startPoint: .leading, endPoint: .trailing
+                            ))
+                            .shadow(color: Theme.accentSecondary.opacity(0.4), radius: 12, x: 0, y: 4)
+                    )
+                    .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // App picker row
+                Button {
+                    showAppPicker = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "squares.leading.rectangle")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.accentSecondary)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Apps à bloquer")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text(screenTime.selectionSummary)
+                                .font(.system(size: 12))
+                                .foregroundStyle(screenTime.hasSelection ? Theme.accentSecondary : Theme.textTertiary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                            .fill(Theme.backgroundCard.opacity(0.5))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.cornerRadiusSmall)
+                                    .strokeBorder(Theme.borderGlass, lineWidth: 1)
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text("Les apps sélectionnées seront bloquées automatiquement à l'heure du coucher par Screen Time.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .glassCard(padding: 18)
+        .sheet(isPresented: $showAppPicker) {
+            FamilyActivityPicker(selection: Binding(
+                get: { screenTime.selection },
+                set: { screenTime.saveSelection($0) }
+            ))
+        }
+        .animation(.easeInOut(duration: 0.25), value: screenTime.isAuthorized)
+        .animation(.easeInOut(duration: 0.25), value: screenTime.isEnabled)
     }
 
     // MARK: - Streak Badge (demoted)
